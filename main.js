@@ -2,10 +2,10 @@ const pcForm = document.getElementById("pc-form")
 // TODO: Don't use classes.
 const objectiveContainerElem = pcForm.querySelector(".objective-container")
 
-const generateObjectiveHTML = index =>
+const generateObjectiveHTML = (index) =>
   document
     .getElementById("objective-template")
-    .text
+    .text //
     .replace(/\{i\+1\}/g, String(index + 1))
     .replace(/\{i\}/g, String(index))
 
@@ -41,7 +41,7 @@ const createChartConfig = ({text, data, labels}) => ({
     scales: {
       x: {min: 0, max: 1},
       y: {min: 0, max: 1},
-    }
+    },
   },
 })
 
@@ -137,10 +137,6 @@ pcForm.addEventListener("input", (event) => {
   personalChart.update()
   collectiveChart.update()
   combinedChart.update()
-
-  pcForm.querySelector('[name="add"]').addEventListener("click", () => {
-    addObjective()
-  })
 })
 
 pcForm.querySelector('[name="add"]').addEventListener("click", () => {
