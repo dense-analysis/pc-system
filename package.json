@@ -5,6 +5,8 @@
   "license": "AGPL",
   "dependencies": {},
   "devDependencies": {
-    "@biomejs/biome": "1.8.3"
+    "@biomejs/biome": "1.8.3",
+    "typescript": "^5.5.4",
+    "@types/chart.js": "^2.9.41"
   }
 }
