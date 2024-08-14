@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8">
+
+  </head>
+  <title>Page Title</title>
+    <style>
+      .canvas-wrapper {
+        display: inline-block;
+      }
+    </style>
+    <script type="text/html" id="objective-template">
+      <fieldset name="objective{i}">
+        <span>
+          <label for="name{i}">{i+1}:</label>
+          <input name="name{i}" type="text" value="Objective {i+1}">
+        </span>
+        <span>
+          <label for="fun{i}">Fun</label>
+          <input name="fun{i}" type="range" min="0" max="1" step="0.01">
+        </span>
+        <span>
+          <label for="achievement{i}">Achievement</label>
+          <input name="achievement{i}" type="range" min="0" max="1" step="0.01">
+        </span>
+        <span>
+          <label for="ease{i}">Ease</label>
+          <input name="ease{i}" type="range" min="0" max="1" step="0.01">
+        </span>
+        <span>
+          <label for="impact{i}">Impact</label>
+          <input name="impact{i}" type="range" min="0" max="1" step="0.01">
+        </span>
+      </fieldset>
+    </script>
+  <body>
+    <form id="pc-form">
+      <div class="objective-container">
+
+      </div>
+      <button type="button" name="add">Add Objective</button>
+    </form>
+    <div>
+      <div class="canvas-wrapper">
+        <canvas id="personal-chart" width="200" height="200"></canvas>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="collective-chart" width="200" height="200"></canvas>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="combined-chart" width="200" height="200"></canvas>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>

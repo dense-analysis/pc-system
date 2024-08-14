@@ -1,0 +1,10 @@
+{
+  "name": "pc-system",
+  "author": "Andrew Wray <andrew@denseanalysis.org>",
+  "version": "0.0.1",
+  "license": "AGPL",
+  "dependencies": {},
+  "devDependencies": {
+    "@biomejs/biome": "1.8.3"
+  }
+}
