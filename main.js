@@ -102,8 +102,8 @@ const createAndRenderNewObjective = () => {
   saveObjectives()
 }
 
-/** @type {(foo: {text: string, data: Point[], labels: string[]}) => ChartConfiguration} */
-const createChartConfig = ({text, data, labels}) => ({
+/** @type {(foo: {text: string, data: Point[], labels: string[], xTitle: string, yTitle: string}) => ChartConfiguration} */
+const createChartConfig = ({text, data, labels, xTitle, yTitle}) => ({
   type: "scatter",
   data: {
     labels,
@@ -120,11 +120,27 @@ const createChartConfig = ({text, data, labels}) => ({
     responsive: false,
     plugins: {
       legend: {display: false},
-      title: {display: true, text},
+      title: {display: true, align: 'center', text},
     },
     scales: {
-      x: {min: 0, max: 1},
-      y: {min: 0, max: 1},
+      x: {
+        title: {display: true, font: {weight: 'bold'}, text: xTitle},
+        beginAtZero: true,
+        min: 0,
+        max: 1,
+        offset: true,
+        ticks: {display: true, stepSize: 0.1},
+        grid: {drawTicks: false, offset: true},
+      },
+      y: {
+        title: {display: true, font: {weight: 'bold'}, text: yTitle},
+        beginAtZero: true,
+        min: 0,
+        max: 1,
+        offset: true,
+        ticks: {display: true, stepSize: 0.1},
+        grid: {drawTicks: false, offset: true},
+      },
     },
   },
 })
@@ -181,6 +197,8 @@ const renderCharts = () => {
       createChartConfig({
         text: "Personal (A, F)",
         data: personalData,
+        xTitle: 'Achievement',
+        yTitle: 'Fun',
         labels,
       }),
     )
@@ -205,6 +223,8 @@ const renderCharts = () => {
       createChartConfig({
         text: "Collective (I, E)",
         data: collectiveData,
+        xTitle: 'Impact',
+        yTitle: 'Ease',
         labels,
       }),
     )
@@ -229,6 +249,8 @@ const renderCharts = () => {
       createChartConfig({
         text: "Personal–Collective (C, P)",
         data: combinedData,
+        xTitle: 'Collective',
+        yTitle: 'Personal',
         labels,
       }),
     )
