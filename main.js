@@ -135,53 +135,113 @@ const project4d2d = (x, y) => x * y
 // Load objectives now.
 loadObjectives()
 
-const personalChart = new Chart(
-  // @ts-ignore
-  document
-    .getElementById("personal-chart")
-    // @ts-ignore
-    .getContext("2d"),
-  createChartConfig({
-    text: "Personal (A, F)",
-    data: objectiveList.map((objective) => ({
+/** @type {Chart | null} */
+let personalChart = null
+/** @type {Chart | null} */
+let collectiveChart = null
+/** @type {Chart | null} */
+let combinedChart = null
+
+const renderCharts = () => {
+  /** @type {Point[]} */
+  const personalData = []
+  /** @type {Point[]} */
+  const collectiveData = []
+  /** @type {Point[]} */
+  const combinedData = []
+  /** @type {string[]} */
+  const labels = []
+
+  // Map objectives to labels and coordinates to render.
+  for (const objective of objectiveList.values()) {
+    labels.push(objective.name)
+    personalData.push({
       x: objective.achievement,
       y: objective.fun,
-    })),
-    labels: objectiveList.map((x) => x.name),
-  }),
-)
-
-const collectiveChart = new Chart(
-  // @ts-ignore
-  document
-    .getElementById("collective-chart")
-    // @ts-ignore
-    .getContext("2d"),
-  createChartConfig({
-    text: "Collective (I, E)",
-    data: objectiveList.map((objective) => ({
+    })
+    collectiveData.push({
       x: objective.impact,
       y: objective.ease,
-    })),
-    labels: objectiveList.map((x) => x.name),
-  }),
-)
-
-const combinedChart = new Chart(
-  // @ts-ignore
-  document
-    .getElementById("combined-chart")
-    // @ts-ignore
-    .getContext("2d"),
-  createChartConfig({
-    text: "Personal–Collective (C, P)",
-    data: objectiveList.map((objective) => ({
+    })
+    // PC co-ordinates are (C, P) combined, spread is (I, E, A, F)
+    combinedData.push({
       x: project4d2d(objective.impact, objective.ease),
       y: project4d2d(objective.achievement, objective.fun),
-    })),
-    labels: objectiveList.map((x) => x.name),
-  }),
-)
+    })
+  }
+
+  // Create or update the Personal chart.
+  if (personalChart == null) {
+    personalChart = new Chart(
+      // @ts-ignore
+      document
+        .getElementById("personal-chart")
+        // @ts-ignore
+        .getContext("2d"),
+      createChartConfig({
+        text: "Personal (A, F)",
+        data: personalData,
+        labels,
+      }),
+    )
+  } else {
+    personalChart.data.labels = labels
+
+    if (personalChart.data.datasets) {
+      personalChart.data.datasets[0].data = personalData
+    }
+
+    personalChart.update()
+  }
+
+  // Create or update the Collective chart.
+  if (collectiveChart == null) {
+    collectiveChart = new Chart(
+      // @ts-ignore
+      document
+        .getElementById("collective-chart")
+        // @ts-ignore
+        .getContext("2d"),
+      createChartConfig({
+        text: "Collective (I, E)",
+        data: collectiveData,
+        labels,
+      }),
+    )
+  } else {
+    collectiveChart.data.labels = labels
+
+    if (collectiveChart.data.datasets) {
+      collectiveChart.data.datasets[0].data = collectiveData
+    }
+
+    collectiveChart.update()
+  }
+
+  // Create or update the Personal-Collective chart.
+  if (combinedChart == null) {
+    combinedChart = new Chart(
+      // @ts-ignore
+      document
+        .getElementById("combined-chart")
+        // @ts-ignore
+        .getContext("2d"),
+      createChartConfig({
+        text: "Personal–Collective (C, P)",
+        data: combinedData,
+        labels,
+      }),
+    )
+  } else {
+    combinedChart.data.labels = labels
+
+    if (combinedChart.data.datasets) {
+      combinedChart.data.datasets[0].data = combinedData
+    }
+
+    combinedChart.update()
+  }
+}
 
 const updateObjectiveListFromHTML = () => {
   /** @type {Objective[]} */
@@ -220,57 +280,36 @@ const updateObjectiveListFromHTML = () => {
 pcForm.addEventListener("input", (event) => {
   // Update the objectiveList from the DOM.
   updateObjectiveListFromHTML()
-
-  /** @type {Point[]} */
-  const personalData = []
-  /** @type {Point[]} */
-  const collectiveData = []
-  /** @type {Point[]} */
-  const combinedData = []
-  /** @type {string[]} */
-  const labels = []
-
-  // Map objectives to labels and coordinates to render.
-  for (const objective of objectiveList.values()) {
-    labels.push(objective.name)
-    personalData.push({
-      x: objective.achievement,
-      y: objective.fun,
-    })
-    collectiveData.push({
-      x: objective.impact,
-      y: objective.ease,
-    })
-    // PC co-ordinates are (C, P) combined, spread is (I, E, A, F)
-    combinedData.push({
-      x: project4d2d(objective.impact, objective.ease),
-      y: project4d2d(objective.achievement, objective.fun),
-    })
-  }
-
-  personalChart.data.labels = labels
-  collectiveChart.data.labels = labels
-  combinedChart.data.labels = labels
-
-  if (personalChart.data.datasets) {
-    personalChart.data.datasets[0].data = personalData
-  }
-
-  if (collectiveChart.data.datasets) {
-    collectiveChart.data.datasets[0].data = collectiveData
-  }
-
-  if (combinedChart.data.datasets) {
-    combinedChart.data.datasets[0].data = combinedData
-  }
-
-  personalChart.update()
-  collectiveChart.update()
-  combinedChart.update()
-
+  renderCharts()
   saveObjectives()
 })
 
 addButton.addEventListener("click", () => {
   createAndRenderNewObjective()
+  renderCharts()
 })
+
+// Listen for any delete button clicks and handle them.
+pcForm.addEventListener("click", (event) => {
+  if (
+    event.target instanceof HTMLButtonElement &&
+    event.target.name.startsWith("delete")
+  ) {
+    // Pick out the delete button index and remove the element.
+    const index = Number(event.target.name.slice("delete".length))
+    objectiveList.splice(index, 1)
+
+    // Remove all current DOM.
+    for (const elem of pcForm.querySelectorAll('fieldset[name^="objective"')) {
+      elem.remove()
+    }
+
+    // Save and reload objectives, reloading DOM.
+    saveObjectives()
+    loadObjectives()
+    // Render charts again from the data.
+    renderCharts()
+  }
+})
+
+renderCharts()
