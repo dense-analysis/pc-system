@@ -1,12 +1,11 @@
-/** @type {Objective[]} */
-let objectiveList = []
-
+// Load the form from DOM.
 const pcForm = document.getElementById("pc-form")
 
 if (!(pcForm instanceof HTMLFormElement)) {
   throw new Error("form not found!")
 }
 
+// Load the add button from DOM.
 const addButton = pcForm.querySelector('[name="add"]')
 
 if (!(addButton instanceof HTMLButtonElement)) {
@@ -25,29 +24,83 @@ const newObjective = (index) => ({
 /** @type {() => Point} */
 const newPoint = () => ({x: 0, y: 0})
 
-/** @type {(index: number) => string} */
-const generateObjectiveHTML = (index) => {
+/** @type {(index: number, objective: Objective) => string} */
+const generateObjectiveHTML = (index, objective) => {
   const template = document.getElementById("objective-template")
 
   if (template instanceof HTMLScriptElement) {
     return template.text //
-      .replace(/\{i\+1\}/g, String(index + 1))
-      .replace(/\{i\}/g, String(index))
+      .replace(/\{([^}]+)\}/g, (match, p1) => {
+        switch (p1) {
+          case "i":
+            return String(index)
+          case "i+1":
+            return String(index + 1)
+          case "name":
+            return objective.name
+          case "fun":
+            return String(objective.fun)
+          case "achievement":
+            return String(objective.achievement)
+          case "ease":
+            return String(objective.ease)
+          case "impact":
+            return String(objective.impact)
+          default:
+            return ""
+        }
+      })
   }
 
   return ""
 }
 
-const addObjective = () => {
-  const index = pcForm.children.length - 1
-  objectiveList.push(newObjective(index))
-  addButton.insertAdjacentHTML("beforebegin", generateObjectiveHTML(index))
+/** @type {Objective[]} */
+let objectiveList = []
+
+const loadObjectives = () => {
+  // Try to get the objectives from localStorage.
+  try {
+    objectiveList = JSON.parse(localStorage.getItem("objectives") || "[]")
+  } catch {
+    /* Do nothing on failure. */
+  }
+
+  for (const [index, objective] of objectiveList.entries()) {
+    addObjectiveToDOM(index, objective)
+  }
+
+  if (objectiveList.length === 0) {
+    // Add an objective straight away if we have none.
+    createAndRenderNewObjective()
+  }
 }
 
-// Add an objective straight away.
-addObjective()
-addObjective()
-addObjective()
+const saveObjectives = () => {
+  // Try to persist objectives to localStorage.
+  try {
+    localStorage.setItem("objectives", JSON.stringify(objectiveList))
+  } catch {
+    /* Do nothing on failure. */
+  }
+}
+
+/** @type {(index: number, objective: Objective) => void} */
+const addObjectiveToDOM = (index, objective) => {
+  addButton.insertAdjacentHTML(
+    "beforebegin",
+    generateObjectiveHTML(index, objective),
+  )
+}
+
+const createAndRenderNewObjective = () => {
+  const index = pcForm.children.length - 1
+  const objective = newObjective(index)
+
+  objectiveList.push(objective)
+  addObjectiveToDOM(index, objective)
+  saveObjectives()
+}
 
 /** @type {(foo: {text: string, data: Point[], labels: string[]}) => ChartConfiguration} */
 const createChartConfig = ({text, data, labels}) => ({
@@ -76,6 +129,12 @@ const createChartConfig = ({text, data, labels}) => ({
   },
 })
 
+/** @type {(x: number, y: number) => number} */
+const project4d2d = (x, y) => x * y
+
+// Load objectives now.
+loadObjectives()
+
 const personalChart = new Chart(
   // @ts-ignore
   document
@@ -84,8 +143,11 @@ const personalChart = new Chart(
     .getContext("2d"),
   createChartConfig({
     text: "Personal (A, F)",
-    data: [{x: 0.5, y: 0.5}],
-    labels: ["Example"],
+    data: objectiveList.map((objective) => ({
+      x: objective.achievement,
+      y: objective.fun,
+    })),
+    labels: objectiveList.map((x) => x.name),
   }),
 )
 
@@ -97,8 +159,11 @@ const collectiveChart = new Chart(
     .getContext("2d"),
   createChartConfig({
     text: "Collective (I, E)",
-    data: [{x: 0.5, y: 0.5}],
-    labels: ["Example"],
+    data: objectiveList.map((objective) => ({
+      x: objective.impact,
+      y: objective.ease,
+    })),
+    labels: objectiveList.map((x) => x.name),
   }),
 )
 
@@ -110,16 +175,17 @@ const combinedChart = new Chart(
     .getContext("2d"),
   createChartConfig({
     text: "Personal–Collective (C, P)",
-    data: [{x: 0.5, y: 0.5}],
-    labels: ["Example"],
+    data: objectiveList.map((objective) => ({
+      x: project4d2d(objective.impact, objective.ease),
+      y: project4d2d(objective.achievement, objective.fun),
+    })),
+    labels: objectiveList.map((x) => x.name),
   }),
 )
 
-/** @type {(x: number, y: number) => number} */
-const project4d2d = (x, y) => x * y
-
 const updateObjectiveListFromHTML = () => {
-  objectiveList = []
+  /** @type {Objective[]} */
+  const newObjectiveList = []
 
   // @ts-ignore
   const formData = new FormData(pcForm)
@@ -129,7 +195,7 @@ const updateObjectiveListFromHTML = () => {
     const index = Number(key.match(/\d+/)?.[0])
 
     if (typeof value === "string" && Number.isFinite(index)) {
-      const objective = objectiveList[index] || newObjective(index)
+      const objective = newObjectiveList[index] || newObjective(index)
 
       // PC co-ordinates are (C, P) combined, spread is (I, E, A, F)
       switch (fieldName) {
@@ -138,15 +204,17 @@ const updateObjectiveListFromHTML = () => {
         case "ease":
         case "impact":
           objective[fieldName] = Number(value)
-          objectiveList[index] = objective
+          newObjectiveList[index] = objective
           break
         case "name":
           objective[fieldName] = value
-          objectiveList[index] = objective
+          newObjectiveList[index] = objective
           break
       }
     }
   }
+
+  objectiveList = newObjectiveList
 }
 
 pcForm.addEventListener("input", (event) => {
@@ -199,8 +267,10 @@ pcForm.addEventListener("input", (event) => {
   personalChart.update()
   collectiveChart.update()
   combinedChart.update()
+
+  saveObjectives()
 })
 
 addButton.addEventListener("click", () => {
-  addObjective()
+  createAndRenderNewObjective()
 })
