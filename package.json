@@ -1,12 +1,12 @@
 {
   "name": "pc-system",
   "author": "Andrew Wray <andrew@denseanalysis.org>",
+  "type": "module",
   "version": "0.0.1",
   "license": "AGPL",
-  "dependencies": {},
   "devDependencies": {
     "@biomejs/biome": "1.8.3",
     "typescript": "^5.5.4",
-    "@types/chart.js": "^2.9.41"
+    "chart.js": "^4.4.4"
   }
 }

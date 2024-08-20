@@ -23,7 +23,7 @@ const newObjective = (index) => ({
 })
 
 /** @type {() => Point} */
-const newPoint = () => ({x: 0, y: 0, r: 1})
+const newPoint = () => ({x: 0, y: 0})
 
 /** @type {(index: number) => string} */
 const generateObjectiveHTML = (index) => {
@@ -49,7 +49,7 @@ addObjective()
 addObjective()
 addObjective()
 
-/** @type {(foo: {text: string, data: Point[], labels: string[]}) => any} */
+/** @type {(foo: {text: string, data: Point[], labels: string[]}) => ChartConfiguration} */
 const createChartConfig = ({text, data, labels}) => ({
   type: "scatter",
   data: {
@@ -84,7 +84,7 @@ const personalChart = new Chart(
     .getContext("2d"),
   createChartConfig({
     text: "Personal (A, F)",
-    data: [{x: 0.5, y: 0.5, r: 1}],
+    data: [{x: 0.5, y: 0.5}],
     labels: ["Example"],
   }),
 )
@@ -97,7 +97,7 @@ const collectiveChart = new Chart(
     .getContext("2d"),
   createChartConfig({
     text: "Collective (I, E)",
-    data: [{x: 0.5, y: 0.5, r: 1}],
+    data: [{x: 0.5, y: 0.5}],
     labels: ["Example"],
   }),
 )
@@ -110,7 +110,7 @@ const combinedChart = new Chart(
     .getContext("2d"),
   createChartConfig({
     text: "Personal–Collective (C, P)",
-    data: [{x: 0.5, y: 0.5, r: 1}],
+    data: [{x: 0.5, y: 0.5}],
     labels: ["Example"],
   }),
 )
@@ -168,18 +168,15 @@ pcForm.addEventListener("input", (event) => {
     personalData.push({
       x: objective.achievement,
       y: objective.fun,
-      r: 1,
     })
     collectiveData.push({
       x: objective.impact,
       y: objective.ease,
-      r: 1,
     })
     // PC co-ordinates are (C, P) combined, spread is (I, E, A, F)
     combinedData.push({
       x: project4d2d(objective.impact, objective.ease),
       y: project4d2d(objective.achievement, objective.fun),
-      r: 1,
     })
   }
 
