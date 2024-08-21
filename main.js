@@ -120,11 +120,11 @@ const createChartConfig = ({text, data, labels, xTitle, yTitle}) => ({
     responsive: false,
     plugins: {
       legend: {display: false},
-      title: {display: true, align: 'center', text},
+      title: {display: true, align: "center", text},
     },
     scales: {
       x: {
-        title: {display: true, font: {weight: 'bold'}, text: xTitle},
+        title: {display: true, font: {weight: "bold"}, text: xTitle},
         beginAtZero: true,
         min: 0,
         max: 1,
@@ -133,7 +133,7 @@ const createChartConfig = ({text, data, labels, xTitle, yTitle}) => ({
         grid: {drawTicks: false, offset: true},
       },
       y: {
-        title: {display: true, font: {weight: 'bold'}, text: yTitle},
+        title: {display: true, font: {weight: "bold"}, text: yTitle},
         beginAtZero: true,
         min: 0,
         max: 1,
@@ -197,8 +197,8 @@ const renderCharts = () => {
       createChartConfig({
         text: "Personal (A, F)",
         data: personalData,
-        xTitle: 'Achievement',
-        yTitle: 'Fun',
+        xTitle: "Achievement",
+        yTitle: "Fun",
         labels,
       }),
     )
@@ -223,8 +223,8 @@ const renderCharts = () => {
       createChartConfig({
         text: "Collective (I, E)",
         data: collectiveData,
-        xTitle: 'Impact',
-        yTitle: 'Ease',
+        xTitle: "Impact",
+        yTitle: "Ease",
         labels,
       }),
     )
@@ -249,8 +249,8 @@ const renderCharts = () => {
       createChartConfig({
         text: "Personal–Collective (C, P)",
         data: combinedData,
-        xTitle: 'Collective',
-        yTitle: 'Personal',
+        xTitle: "Collective",
+        yTitle: "Personal",
         labels,
       }),
     )
@@ -299,6 +299,19 @@ const updateObjectiveListFromHTML = () => {
   objectiveList = newObjectiveList
 }
 
+const persistAndRenderObjectives = () => {
+  // Remove all current DOM.
+  for (const elem of pcForm.querySelectorAll('fieldset[name^="objective"')) {
+    elem.remove()
+  }
+
+  // Save and reload objectives, reloading DOM.
+  saveObjectives()
+  loadObjectives()
+  // Render charts again from the data.
+  renderCharts()
+}
+
 pcForm.addEventListener("input", (event) => {
   // Update the objectiveList from the DOM.
   updateObjectiveListFromHTML()
@@ -320,18 +333,105 @@ pcForm.addEventListener("click", (event) => {
     // Pick out the delete button index and remove the element.
     const index = Number(event.target.name.slice("delete".length))
     objectiveList.splice(index, 1)
-
-    // Remove all current DOM.
-    for (const elem of pcForm.querySelectorAll('fieldset[name^="objective"')) {
-      elem.remove()
-    }
-
-    // Save and reload objectives, reloading DOM.
-    saveObjectives()
-    loadObjectives()
-    // Render charts again from the data.
-    renderCharts()
+    persistAndRenderObjectives()
   }
 })
 
 renderCharts()
+
+// Load the download CSV button from DOM.
+const downloadCSVButton = pcForm.querySelector('[name="download-csv"]')
+
+if (!(downloadCSVButton instanceof HTMLButtonElement)) {
+  throw new Error("file input not found!")
+}
+
+/** @type {() => void} */
+const saveCSV = () => {
+  // Convert data into CSV.
+  const objectiveCSVData = objectiveList
+    .map(
+      (objective) =>
+        `${objective.name.replace(",", "")},${objective.achievement},` +
+        `${objective.fun},${objective.impact},${objective.ease}`,
+    )
+    .join("\n")
+  const csv = `name,achievement,fun,impact,ease\n${objectiveCSVData}`
+
+  const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"})
+
+  const link = document.createElement("a")
+  const url = URL.createObjectURL(blob)
+  link.setAttribute("href", url)
+  link.setAttribute("download", "pc-objectives.csv")
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+downloadCSVButton.addEventListener("click", (event) => {
+  saveCSV()
+})
+
+// Load the upload CSV input from DOM.
+const uploadCSVInput = pcForm.querySelector('[name="upload-csv"]')
+
+if (!(uploadCSVInput instanceof HTMLInputElement)) {
+  throw new Error("file input not found!")
+}
+
+/** @type {(text: string | undefined) => number} */
+const parseObjectiveNumber = (text) => {
+  const number = Number(text)
+
+  return Number.isFinite(number) && number >= 0 && number <= 1 ? number : 0
+}
+
+/** @type {(text: string) => void} */
+const loadCSV = (text) => {
+  // name,achievement,fun,impact,ease
+  const rows = text.split("\n").map((line) => line.split(","))
+  const header = rows[0] || []
+  // Remove the header row now we've pulled it out.
+  rows.splice(0, 1)
+
+  const nameIndex = header.indexOf("name")
+  const achievementIndex = header.indexOf("achievement")
+  const funIndex = header.indexOf("fun")
+  const impactIndex = header.indexOf("impact")
+  const easeIndex = header.indexOf("ease")
+
+  /** @type {Objective[]} */
+  const newObjectiveList = []
+
+  for (const row of rows) {
+    newObjectiveList.push({
+      name: row[nameIndex] || "",
+      achievement: parseObjectiveNumber(row[achievementIndex]),
+      fun: parseObjectiveNumber(row[funIndex]),
+      impact: parseObjectiveNumber(row[impactIndex]),
+      ease: parseObjectiveNumber(row[easeIndex]),
+    })
+  }
+
+  objectiveList = newObjectiveList
+  persistAndRenderObjectives()
+}
+
+uploadCSVInput.addEventListener("change", (event) => {
+  const file = uploadCSVInput.files?.[0]
+
+  if (file) {
+    const reader = new FileReader()
+
+    reader.onload = (e) => {
+      const text = e.target?.result
+
+      if (typeof text === "string") {
+        loadCSV(text)
+      }
+    }
+
+    reader.readAsText(file)
+  }
+})
