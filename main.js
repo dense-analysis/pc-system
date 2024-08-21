@@ -94,7 +94,7 @@ const addObjectiveToDOM = (index, objective) => {
 }
 
 const createAndRenderNewObjective = () => {
-  const index = pcForm.children.length - 1
+  const index = objectiveList.length
   const objective = newObjective(index)
 
   objectiveList.push(objective)
