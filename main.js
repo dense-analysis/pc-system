@@ -146,7 +146,7 @@ const createChartConfig = ({text, data, labels, xTitle, yTitle}) => ({
 })
 
 /** @type {(x: number, y: number) => number} */
-const project4d2d = (x, y) => x * y
+const project4d2d = (x, y) => (Math.hypot(x, y) / Math.sqrt(2) + x * y) / 2
 
 // Load objectives now.
 loadObjectives()
