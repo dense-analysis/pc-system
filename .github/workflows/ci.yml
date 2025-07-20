@@ -2,8 +2,18 @@
 name: Lint
 
 on:
+  workflow_call:
   pull_request:
 
 jobs:
   lint:
-    uses: ./.github/workflows/lint.yml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run tsc
