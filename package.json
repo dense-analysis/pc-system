@@ -8,5 +8,9 @@
     "@biomejs/biome": "1.8.3",
     "typescript": "^5.5.4",
     "chart.js": "^4.4.4"
+  },
+  "scripts": {
+    "lint": "biome check --fix",
+    "tsc": "tsc --noEmit"
   }
 }
