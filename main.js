@@ -12,6 +12,28 @@ if (!(addButton instanceof HTMLButtonElement)) {
   throw new Error("button not found!")
 }
 
+const defaultColors = [
+  "#E69F00",
+  "#56B4E9",
+  "#009E73",
+  "#F0E442",
+  "#0072B2",
+  "#D55E00",
+  "#CC79A7",
+  "#000000",
+]
+
+let nextColorIndex = 0
+
+const isValidColor = (color) =>
+  typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color)
+
+const getNextColor = () => {
+  const color = defaultColors[nextColorIndex % defaultColors.length]
+  nextColorIndex += 1
+  return color
+}
+
 /** @type {(index: number) => Objective} */
 const newObjective = (index) => ({
   name: `Objective ${index}`,
@@ -19,6 +41,7 @@ const newObjective = (index) => ({
   achievement: 0.5,
   ease: 0.5,
   impact: 0.5,
+  color: getNextColor(),
 })
 
 /** @type {() => Point} */
@@ -46,6 +69,8 @@ const generateObjectiveHTML = (index, objective) => {
             return String(objective.ease)
           case "impact":
             return String(objective.impact)
+          case "color":
+            return objective.color
           default:
             return ""
         }
@@ -62,8 +87,15 @@ const loadObjectives = () => {
   // Try to get the objectives from localStorage.
   try {
     objectiveList = JSON.parse(localStorage.getItem("objectives") || "[]")
+    nextColorIndex = Number(localStorage.getItem("nextColorIndex")) || objectiveList.length
   } catch {
     /* Do nothing on failure. */
+  }
+
+  for (const objective of objectiveList) {
+    if (!isValidColor(objective.color)) {
+      objective.color = getNextColor()
+    }
   }
 
   for (const [index, objective] of objectiveList.entries()) {
@@ -80,6 +112,7 @@ const saveObjectives = () => {
   // Try to persist objectives to localStorage.
   try {
     localStorage.setItem("objectives", JSON.stringify(objectiveList))
+    localStorage.setItem("nextColorIndex", String(nextColorIndex))
   } catch {
     /* Do nothing on failure. */
   }
@@ -102,16 +135,18 @@ const createAndRenderNewObjective = () => {
   saveObjectives()
 }
 
-/** @type {(foo: {text: string, data: Point[], labels: string[], xTitle: string, yTitle: string}) => ChartConfiguration} */
-const createChartConfig = ({text, data, labels, xTitle, yTitle}) => ({
+/** @type {(foo: {text: string, data: Point[], labels: string[], colors: string[], xTitle: string, yTitle: string}) => ChartConfiguration} */
+const createChartConfig = ({text, data, labels, colors, xTitle, yTitle}) => ({
   type: "scatter",
   data: {
     labels,
     datasets: [
       {
         data: data,
-        borderColor: "rgb(255, 99, 132)",
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        borderColor: colors,
+        backgroundColor: colors,
+        pointBorderColor: colors,
+        pointBackgroundColor: colors,
       },
     ],
   },
@@ -167,10 +202,13 @@ const renderCharts = () => {
   const combinedData = []
   /** @type {string[]} */
   const labels = []
+  /** @type {string[]} */
+  const colors = []
 
   // Map objectives to labels and coordinates to render.
   for (const objective of objectiveList.values()) {
     labels.push(objective.name)
+    colors.push(objective.color)
     personalData.push({
       x: objective.achievement,
       y: objective.fun,
@@ -200,6 +238,7 @@ const renderCharts = () => {
         xTitle: "Achievement",
         yTitle: "Fun",
         labels,
+        colors,
       }),
     )
   } else {
@@ -207,6 +246,8 @@ const renderCharts = () => {
 
     if (personalChart.data.datasets) {
       personalChart.data.datasets[0].data = personalData
+      personalChart.data.datasets[0].borderColor = colors
+      personalChart.data.datasets[0].backgroundColor = colors
     }
 
     personalChart.update()
@@ -226,6 +267,7 @@ const renderCharts = () => {
         xTitle: "Impact",
         yTitle: "Ease",
         labels,
+        colors,
       }),
     )
   } else {
@@ -233,6 +275,8 @@ const renderCharts = () => {
 
     if (collectiveChart.data.datasets) {
       collectiveChart.data.datasets[0].data = collectiveData
+      collectiveChart.data.datasets[0].borderColor = colors
+      collectiveChart.data.datasets[0].backgroundColor = colors
     }
 
     collectiveChart.update()
@@ -252,6 +296,7 @@ const renderCharts = () => {
         xTitle: "Collective",
         yTitle: "Personal",
         labels,
+        colors,
       }),
     )
   } else {
@@ -259,6 +304,8 @@ const renderCharts = () => {
 
     if (combinedChart.data.datasets) {
       combinedChart.data.datasets[0].data = combinedData
+      combinedChart.data.datasets[0].borderColor = colors
+      combinedChart.data.datasets[0].backgroundColor = colors
     }
 
     combinedChart.update()
@@ -277,7 +324,9 @@ const updateObjectiveListFromHTML = () => {
     const index = Number(key.match(/\d+/)?.[0])
 
     if (typeof value === "string" && Number.isFinite(index)) {
-      const objective = newObjectiveList[index] || newObjective(index)
+      const objective =
+        newObjectiveList[index] ||
+        (objectiveList[index] ? {...objectiveList[index]} : newObjective(index))
 
       // PC co-ordinates are (C, P) combined, spread is (I, E, A, F)
       switch (fieldName) {
@@ -290,6 +339,12 @@ const updateObjectiveListFromHTML = () => {
           break
         case "name":
           objective[fieldName] = value
+          newObjectiveList[index] = objective
+          break
+        case "color":
+          if (isValidColor(value)) {
+            objective.color = value
+          }
           newObjectiveList[index] = objective
           break
       }
@@ -353,10 +408,10 @@ const saveCSV = () => {
     .map(
       (objective) =>
         `${objective.name.replace(",", "")},${objective.achievement},` +
-        `${objective.fun},${objective.impact},${objective.ease}`,
+        `${objective.fun},${objective.impact},${objective.ease},${objective.color}`,
     )
     .join("\n")
-  const csv = `name,achievement,fun,impact,ease\n${objectiveCSVData}`
+  const csv = `name,achievement,fun,impact,ease,color\n${objectiveCSVData}`
 
   const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"})
 
@@ -389,7 +444,7 @@ const parseObjectiveNumber = (text) => {
 
 /** @type {(text: string) => void} */
 const loadCSV = (text) => {
-  // name,achievement,fun,impact,ease
+  // name,achievement,fun,impact,ease,color
   const rows = text.split("\n").map((line) => line.split(","))
   const header = rows[0] || []
   // Remove the header row now we've pulled it out.
@@ -400,18 +455,29 @@ const loadCSV = (text) => {
   const funIndex = header.indexOf("fun")
   const impactIndex = header.indexOf("impact")
   const easeIndex = header.indexOf("ease")
+  const colorIndex = header.indexOf("color")
 
   /** @type {Objective[]} */
   const newObjectiveList = []
 
+  nextColorIndex = Number(localStorage.getItem("nextColorIndex")) || 0
+
   for (const row of rows) {
+    let color = row[colorIndex]
+    if (!isValidColor(color)) {
+      color = getNextColor()
+    }
     newObjectiveList.push({
       name: row[nameIndex] || "",
       achievement: parseObjectiveNumber(row[achievementIndex]),
       fun: parseObjectiveNumber(row[funIndex]),
       impact: parseObjectiveNumber(row[impactIndex]),
       ease: parseObjectiveNumber(row[easeIndex]),
+      color,
     })
+  }
+  if (nextColorIndex < newObjectiveList.length) {
+    nextColorIndex = newObjectiveList.length
   }
 
   objectiveList = newObjectiveList
