@@ -19,5 +19,6 @@ declare global {
     achievement: number
     ease: number
     impact: number
+    color: string
   }
 }

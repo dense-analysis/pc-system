@@ -12,13 +12,65 @@ if (!(addButton instanceof HTMLButtonElement)) {
   throw new Error("button not found!")
 }
 
+const defaultColors = [
+  "#0072B2", // Strong Blue
+  "#009E73", // Teal Green
+  "#D55E00", // Vermilion
+  "#E69F00", // Vibrant Orange
+  "#EEDD88", // Pale Yellow
+  "#CC79A7", // Purple
+  "#56B4E9", // Sky Blue
+  "#999999", // Medium Grey
+  "#88CCEE", // Soft Cyan
+  "#44AA99", // Dark Teal
+  "#117733", // Forest Green
+  "#DDCC77", // Mustard
+  "#661100", // Deep Brown
+  "#AA4499", // Plum
+  "#882255", // Burgundy
+  "#CC6677", // Rose
+  "#DDDDDD", // Light Grey
+  "#114477", // Steely Blue
+  "#999933", // Olive
+  "#AA3377", // Orchid
+  "#77AADD", // Muted Blue
+  "#EE8866", // Coral
+  "#44BB99", // Aquamarine
+  "#9988DD", // Soft Purple
+  "#EECC66", // Sand
+  "#FF6F00", // Flame
+  "#C51B8A", // Fuchsia
+  "#F0E442", // Bright Yellow
+  "#1B9E77", // Dark Teal
+  "#7570B3", // Blue-Purple
+  "#E7298A", // Magenta
+  "#66A61E", // Leaf Green
+  "#E6AB02", // Warm Yellow
+  "#A6761D", // Ochre
+  "#666666", // Dark Grey
+]
+
+/** @type {(color: unknown) => boolean} */
+const isValidColor = (color) =>
+  typeof color === "string" && /^#[0-9a-fA-F]{6}$/.test(color)
+
+/** @type {(currentObjectives: Objective[]) => string} */
+const findNextAvailableColor = (objectiveList) =>
+  defaultColors.find(
+    (color) =>
+      !objectiveList.some(
+        (x) => String(x.color).toUpperCase() === color.toUpperCase(),
+      ),
+  ) || "#000000"
+
 /** @type {(index: number) => Objective} */
 const newObjective = (index) => ({
-  name: `Objective ${index}`,
+  name: `Objective ${index + 1}`,
   fun: 0.5,
   achievement: 0.5,
   ease: 0.5,
   impact: 0.5,
+  color: "#000000",
 })
 
 /** @type {() => Point} */
@@ -46,6 +98,8 @@ const generateObjectiveHTML = (index, objective) => {
             return String(objective.ease)
           case "impact":
             return String(objective.impact)
+          case "color":
+            return objective.color
           default:
             return ""
         }
@@ -56,30 +110,32 @@ const generateObjectiveHTML = (index, objective) => {
 }
 
 /** @type {Objective[]} */
-let objectiveList = []
+let activeObjectiveList = []
 
 const loadObjectives = () => {
   // Try to get the objectives from localStorage.
   try {
-    objectiveList = JSON.parse(localStorage.getItem("objectives") || "[]")
+    activeObjectiveList = JSON.parse(localStorage.getItem("objectives") || "[]")
   } catch {
     /* Do nothing on failure. */
   }
 
-  for (const [index, objective] of objectiveList.entries()) {
-    addObjectiveToDOM(index, objective)
+  for (const objective of activeObjectiveList) {
+    // If colors are missing or invalid find a suitable one.
+    if (!isValidColor(objective.color)) {
+      objective.color = findNextAvailableColor(activeObjectiveList)
+    }
   }
 
-  if (objectiveList.length === 0) {
-    // Add an objective straight away if we have none.
-    createAndRenderNewObjective()
+  for (const [index, objective] of activeObjectiveList.entries()) {
+    addObjectiveToDOM(index, objective)
   }
 }
 
 const saveObjectives = () => {
   // Try to persist objectives to localStorage.
   try {
-    localStorage.setItem("objectives", JSON.stringify(objectiveList))
+    localStorage.setItem("objectives", JSON.stringify(activeObjectiveList))
   } catch {
     /* Do nothing on failure. */
   }
@@ -94,24 +150,25 @@ const addObjectiveToDOM = (index, objective) => {
 }
 
 const createAndRenderNewObjective = () => {
-  const index = objectiveList.length
+  const index = activeObjectiveList.length
   const objective = newObjective(index)
+  objective.color = findNextAvailableColor(activeObjectiveList)
 
-  objectiveList.push(objective)
+  activeObjectiveList.push(objective)
   addObjectiveToDOM(index, objective)
   saveObjectives()
 }
 
-/** @type {(foo: {text: string, data: Point[], labels: string[], xTitle: string, yTitle: string}) => ChartConfiguration} */
-const createChartConfig = ({text, data, labels, xTitle, yTitle}) => ({
+/** @type {(foo: {text: string, data: Point[], labels: string[], colors: string[], xTitle: string, yTitle: string}) => ChartConfiguration} */
+const createChartConfig = ({text, data, labels, colors, xTitle, yTitle}) => ({
   type: "scatter",
   data: {
     labels,
     datasets: [
       {
         data: data,
-        borderColor: "rgb(255, 99, 132)",
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        borderColor: colors,
+        backgroundColor: colors,
       },
     ],
   },
@@ -167,10 +224,13 @@ const renderCharts = () => {
   const combinedData = []
   /** @type {string[]} */
   const labels = []
+  /** @type {string[]} */
+  const colors = []
 
   // Map objectives to labels and coordinates to render.
-  for (const objective of objectiveList.values()) {
+  for (const objective of activeObjectiveList.values()) {
     labels.push(objective.name)
+    colors.push(objective.color)
     personalData.push({
       x: objective.achievement,
       y: objective.fun,
@@ -200,6 +260,7 @@ const renderCharts = () => {
         xTitle: "Achievement",
         yTitle: "Fun",
         labels,
+        colors,
       }),
     )
   } else {
@@ -207,6 +268,8 @@ const renderCharts = () => {
 
     if (personalChart.data.datasets) {
       personalChart.data.datasets[0].data = personalData
+      personalChart.data.datasets[0].borderColor = colors
+      personalChart.data.datasets[0].backgroundColor = colors
     }
 
     personalChart.update()
@@ -226,6 +289,7 @@ const renderCharts = () => {
         xTitle: "Impact",
         yTitle: "Ease",
         labels,
+        colors,
       }),
     )
   } else {
@@ -233,6 +297,8 @@ const renderCharts = () => {
 
     if (collectiveChart.data.datasets) {
       collectiveChart.data.datasets[0].data = collectiveData
+      collectiveChart.data.datasets[0].borderColor = colors
+      collectiveChart.data.datasets[0].backgroundColor = colors
     }
 
     collectiveChart.update()
@@ -252,6 +318,7 @@ const renderCharts = () => {
         xTitle: "Collective",
         yTitle: "Personal",
         labels,
+        colors,
       }),
     )
   } else {
@@ -259,6 +326,8 @@ const renderCharts = () => {
 
     if (combinedChart.data.datasets) {
       combinedChart.data.datasets[0].data = combinedData
+      combinedChart.data.datasets[0].borderColor = colors
+      combinedChart.data.datasets[0].backgroundColor = colors
     }
 
     combinedChart.update()
@@ -266,6 +335,7 @@ const renderCharts = () => {
 }
 
 const updateObjectiveListFromHTML = () => {
+  // Create a new objective list for replacing the current one.
   /** @type {Objective[]} */
   const newObjectiveList = []
 
@@ -277,6 +347,7 @@ const updateObjectiveListFromHTML = () => {
     const index = Number(key.match(/\d+/)?.[0])
 
     if (typeof value === "string" && Number.isFinite(index)) {
+      // Create a new objective. We must not read the activeObjectiveList.
       const objective = newObjectiveList[index] || newObjective(index)
 
       // PC co-ordinates are (C, P) combined, spread is (I, E, A, F)
@@ -292,11 +363,15 @@ const updateObjectiveListFromHTML = () => {
           objective[fieldName] = value
           newObjectiveList[index] = objective
           break
+        case "color":
+          objective.color = value
+          newObjectiveList[index] = objective
+          break
       }
     }
   }
 
-  objectiveList = newObjectiveList
+  activeObjectiveList = newObjectiveList
 }
 
 const persistAndRenderObjectives = () => {
@@ -332,7 +407,7 @@ pcForm.addEventListener("click", (event) => {
   ) {
     // Pick out the delete button index and remove the element.
     const index = Number(event.target.name.slice("delete".length))
-    objectiveList.splice(index, 1)
+    activeObjectiveList.splice(index, 1)
     persistAndRenderObjectives()
   }
 })
@@ -349,14 +424,14 @@ if (!(downloadCSVButton instanceof HTMLButtonElement)) {
 /** @type {() => void} */
 const saveCSV = () => {
   // Convert data into CSV.
-  const objectiveCSVData = objectiveList
+  const objectiveCSVData = activeObjectiveList
     .map(
       (objective) =>
         `${objective.name.replace(",", "")},${objective.achievement},` +
-        `${objective.fun},${objective.impact},${objective.ease}`,
+        `${objective.fun},${objective.impact},${objective.ease},${objective.color}`,
     )
     .join("\n")
-  const csv = `name,achievement,fun,impact,ease\n${objectiveCSVData}`
+  const csv = `name,achievement,fun,impact,ease,color\n${objectiveCSVData}`
 
   const blob = new Blob([csv], {type: "text/csv;charset=utf-8;"})
 
@@ -389,7 +464,7 @@ const parseObjectiveNumber = (text) => {
 
 /** @type {(text: string) => void} */
 const loadCSV = (text) => {
-  // name,achievement,fun,impact,ease
+  // name,achievement,fun,impact,ease,color
   const rows = text.split("\n").map((line) => line.split(","))
   const header = rows[0] || []
   // Remove the header row now we've pulled it out.
@@ -400,6 +475,7 @@ const loadCSV = (text) => {
   const funIndex = header.indexOf("fun")
   const impactIndex = header.indexOf("impact")
   const easeIndex = header.indexOf("ease")
+  const colorIndex = header.indexOf("color")
 
   /** @type {Objective[]} */
   const newObjectiveList = []
@@ -411,10 +487,11 @@ const loadCSV = (text) => {
       fun: parseObjectiveNumber(row[funIndex]),
       impact: parseObjectiveNumber(row[impactIndex]),
       ease: parseObjectiveNumber(row[easeIndex]),
+      color: row[colorIndex] || "",
     })
   }
 
-  objectiveList = newObjectiveList
+  activeObjectiveList = newObjectiveList
   persistAndRenderObjectives()
 }
 
@@ -433,5 +510,9 @@ uploadCSVInput.addEventListener("change", (event) => {
     }
 
     reader.readAsText(file)
+  }
+
+  if (event.target instanceof HTMLInputElement) {
+    event.target.value = ""
   }
 })
