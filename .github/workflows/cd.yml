@@ -1,5 +1,5 @@
 ---
-name: Deploy PC System Reference Tool
+name: Deploy
 
 on:
   push:
