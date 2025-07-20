@@ -1,0 +1,33 @@
+---
+name: Deploy PC System Reference Tool
+
+on:
+  push:
+    paths-ignore:
+      - AGENTS.md
+      - LICENSE
+      - README.md
+      - biome.json
+      - global.d.ts
+      - package-lock.json
+      - package.json
+      - tsconfig.json
+    branches:
+      - main
+
+jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+  deploy:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      # Load the updated code
+      - name: Load updated code
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          key: ${{ secrets.DENSEBOT_PRIVATE_SSH_KEY }}
+          script_stop: true
+          script: cd ~/pc-system && git pull
