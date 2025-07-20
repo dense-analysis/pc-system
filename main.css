@@ -97,7 +97,13 @@ main {
 }
 
 #objectives-pane {
-  height: calc(80vh - var(--canvas-wrapper-padding) - var(--canvas-size) - var(--border-size) - var(--canvas-pane-margin));
+  height: calc(
+    80vh
+    - var(--canvas-wrapper-padding)
+    - var(--canvas-size)
+    - var(--border-size)
+    - var(--canvas-pane-margin)
+  );
   overflow-y: auto;
   overflow-x: hidden;
   border: var(--border-size) solid #d1d5da;
@@ -139,6 +145,7 @@ main {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: hidden;
+  max-width: 3.8em;
 }
 
 #pc-form input[type="file"] {
@@ -232,13 +239,11 @@ main {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-@media (max-width: 680px) {
-  #pc-form label {
-    max-width: 3.8em;
-  }
-}
-
 @media (min-width: 1200px) {
+  #pc-form label {
+    max-width: none;
+  }
+
   main {
     grid-template-columns: repeat(2, 1fr);
   }
