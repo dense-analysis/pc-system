@@ -2,63 +2,58 @@
 <html lang="en-GB">
   <head>
     <meta charset="UTF-8">
-
-  </head>
-  <title>Page Title</title>
-    <style>
-      .canvas-wrapper {
-        display: inline-block;
-      }
-    </style>
+    <title>PC System</title>
+    <link rel="stylesheet" href="main.css">
     <script type="text/html" id="objective-template">
       <fieldset name="objective{i}">
-        <span>
-          <label for="name{i}">{i+1}:</label>
-          <input name="name{i}" type="text" value="{name}">
+        <span class="objective-header">
+          <input name="name{i}" type="text" value="{name}" placeholder="Objective {i+1}">
           <input name="color{i}" type="color" value="{color}">
         </span>
-        <span>
+        <span class="objective-dimension">
           <label for="fun{i}">Fun</label>
           <input name="fun{i}" type="range" min="0" max="1" step="0.01" value="{fun}">
         </span>
-        <span>
+        <span class="objective-dimension">
           <label for="achievement{i}">Achievement</label>
           <input name="achievement{i}" type="range" min="0" max="1" step="0.01" value="{achievement}">
         </span>
-        <span>
+        <span class="objective-dimension">
           <label for="ease{i}">Ease</label>
           <input name="ease{i}" type="range" min="0" max="1" step="0.01" value="{ease}">
         </span>
-        <span>
+        <span class="objective-dimension">
           <label for="impact{i}">Impact</label>
           <input name="impact{i}" type="range" min="0" max="1" step="0.01" value="{impact}">
         </span>
         <span>
-          <button type="button" name="delete{i}">Delete</button>
+          <button type="button" name="delete{i}">x</button>
         </span>
       </fieldset>
     </script>
+  </head>
   <body>
-    <form id="pc-form">
-      <button type="button" name="add">Add Objective</button>
-      <button type="button" name="download-csv">Download CSV</button>
-      <span>
-        <label for="upload-csv">Upload CSV:</label>
-        <input type="file" name="upload-csv" accept="text/csv" />
-      </span>
-    </form>
-    <div>
-      <div class="canvas-wrapper">
-        <canvas id="personal-chart" width="250" height="250"></canvas>
+    <main>
+      <form class="pane" id="pc-form">
+        <div id="objectives-pane">
+        </div>
+        <button type="button" name="add">Add Objective</button>
+        <button type="button" name="download-csv">Download CSV</button>
+        <button type="button" name="upload-csv">Upload CSV</button>
+        <input type="file" name="upload-csv-input" accept="text/csv" />
+      </form>
+      <div class="pane canvases">
+        <div class="canvas-wrapper">
+          <canvas id="personal-chart" width="200" height="200"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="collective-chart" width="200" height="200"></canvas>
+        </div>
+        <div class="canvas-wrapper">
+          <canvas id="combined-chart" width="200" height="200"></canvas>
+        </div>
       </div>
-      <div class="canvas-wrapper">
-        <canvas id="collective-chart" width="250" height="250"></canvas>
-      </div>
-      <div class="canvas-wrapper">
-        <canvas id="combined-chart" width="250" height="250"></canvas>
-      </div>
-    </div>
-
+    </main>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script src="main.js"></script>
   </body>

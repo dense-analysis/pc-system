@@ -12,6 +12,33 @@ if (!(addButton instanceof HTMLButtonElement)) {
   throw new Error("button not found!")
 }
 
+// Load the download CSV button from DOM.
+const downloadCSVButton = pcForm.querySelector('[name="download-csv"]')
+
+if (!(downloadCSVButton instanceof HTMLButtonElement)) {
+  throw new Error("download button not found!")
+}
+
+// Load the upload button from DOM.
+const uploadCSVButton = pcForm.querySelector('[name="upload-csv"]')
+
+if (!(uploadCSVButton instanceof HTMLButtonElement)) {
+  throw new Error("upload button not found!")
+}
+
+// Load the upload CSV input from DOM.
+const uploadCSVInput = pcForm.querySelector('[name="upload-csv-input"]')
+
+if (!(uploadCSVInput instanceof HTMLInputElement)) {
+  throw new Error("file input not found!")
+}
+
+const objectivesPane = document.getElementById("objectives-pane")
+
+if (!(objectivesPane instanceof HTMLDivElement)) {
+  throw new Error("objectives-pane not found!")
+}
+
 const defaultColors = [
   "#0072B2", // Strong Blue
   "#009E73", // Teal Green
@@ -104,6 +131,7 @@ const generateObjectiveHTML = (index, objective) => {
             return ""
         }
       })
+      .trim()
   }
 
   return ""
@@ -143,8 +171,8 @@ const saveObjectives = () => {
 
 /** @type {(index: number, objective: Objective) => void} */
 const addObjectiveToDOM = (index, objective) => {
-  addButton.insertAdjacentHTML(
-    "beforebegin",
+  objectivesPane.insertAdjacentHTML(
+    "beforeend",
     generateObjectiveHTML(index, objective),
   )
 }
@@ -186,7 +214,7 @@ const createChartConfig = ({text, data, labels, colors, xTitle, yTitle}) => ({
         min: 0,
         max: 1,
         offset: true,
-        ticks: {display: true, stepSize: 0.1},
+        ticks: {display: false, stepSize: 0.1},
         grid: {drawTicks: false, offset: true},
       },
       y: {
@@ -195,7 +223,7 @@ const createChartConfig = ({text, data, labels, colors, xTitle, yTitle}) => ({
         min: 0,
         max: 1,
         offset: true,
-        ticks: {display: true, stepSize: 0.1},
+        ticks: {display: false, stepSize: 0.1},
         grid: {drawTicks: false, offset: true},
       },
     },
@@ -414,13 +442,6 @@ pcForm.addEventListener("click", (event) => {
 
 renderCharts()
 
-// Load the download CSV button from DOM.
-const downloadCSVButton = pcForm.querySelector('[name="download-csv"]')
-
-if (!(downloadCSVButton instanceof HTMLButtonElement)) {
-  throw new Error("file input not found!")
-}
-
 /** @type {() => void} */
 const saveCSV = () => {
   // Convert data into CSV.
@@ -448,12 +469,9 @@ downloadCSVButton.addEventListener("click", (event) => {
   saveCSV()
 })
 
-// Load the upload CSV input from DOM.
-const uploadCSVInput = pcForm.querySelector('[name="upload-csv"]')
-
-if (!(uploadCSVInput instanceof HTMLInputElement)) {
-  throw new Error("file input not found!")
-}
+uploadCSVButton.addEventListener("click", () => {
+  uploadCSVInput.click()
+})
 
 /** @type {(text: string | undefined) => number} */
 const parseObjectiveNumber = (text) => {

@@ -1,0 +1,181 @@
+/* base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #f5f7fa;
+  color: #333;
+  margin: 0;
+  padding: 1rem;
+}
+
+:root {
+  --canvas-wrapper-padding: 0.5rem;
+  --canvas-size: 200px;
+  --border-size: 1px;
+  --canvas-pane-margin: 1rem;
+}
+
+main {
+  display: grid;
+}
+
+#objectives-pane {
+  height: calc(80vh - var(--canvas-wrapper-padding) - var(--canvas-size) - var(--border-size) - var(--canvas-pane-margin));
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: var(--border-size) solid #d1d5da;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* We use fieldset for objectives and there's 4 on the right */
+#pc-form fieldset {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto repeat(4, 1fr);
+  column-gap: 1rem;
+  padding: 0.5rem 1rem;
+  border: var(--border-size) solid #d1d5da;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  background: #fff;
+}
+
+/* keep label + control together, but stack for sliders */
+#pc-form fieldset span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* stack label above slider to free up horizontal space */
+#pc-form fieldset span.objective-dimension {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* labels */
+#pc-form label {
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: hidden;
+}
+
+#pc-form input[type="file"] {
+  display: none;
+}
+
+/* text, color, and file inputs */
+#pc-form input[type="text"] {
+  border: var(--border-size) solid #cbd2d9;
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
+}
+
+#pc-form input[type="color"] {
+  width: 2rem;
+  padding: 0.25rem;
+}
+
+/* sliders: full-width in their cell, slimmer track */
+#pc-form input[type="range"] {
+  width: 100%;
+  margin: 0;
+}
+
+/* core button styling */
+#pc-form button {
+  background: #0366d6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+#pc-form button:hover {
+  background: #0254b3;
+}
+#pc-form button:active {
+  background: #014a94;
+}
+
+/* bottom-row actions all in one line */
+#pc-form > button[name="add"] {
+  grid-column: 1;
+}
+#pc-form > button[name="download-csv"] {
+  grid-column: 2;
+}
+#pc-form > span {
+  grid-column: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+#pc-form > span input[type="file"] {
+  margin: 0;
+}
+
+/* style the delete button */
+#pc-form fieldset button[name^="delete"] {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+
+  /* small circle button */
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border-radius: 0;
+  color: white;
+  background: #605f61;
+  border-radius: 30px;
+  font-weight: bold;
+  text-align: center;
+
+  /* hide original text */
+  font-size: 1rem;
+}
+
+.pane.canvases {
+  margin: var(--canvas-pane-margin) 0 0 0;
+}
+
+/* chart frames */
+.canvas-wrapper {
+  display: inline-block;
+  padding: var(--canvas-wrapper-padding);
+  background: #fff;
+  border: var(--border-size) solid #d1d5da;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+@media (max-width: 680px) {
+  #pc-form label {
+    max-width: 3.8em;
+  }
+}
+
+@media (min-width: 1200px) {
+  main {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pane.canvases {
+    margin: 0 0 0 var(--canvas-pane-margin);
+  }
+
+  #objectives-pane {
+    height: 80vh;
+  }
+}
